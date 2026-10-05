@@ -5,6 +5,7 @@ const AddWorkoutPage = ({ user, onLogout }) => {
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+
   const submitForm = async (e) => {
     e.preventDefault();
     const workout = Object.fromEntries(new FormData(e.currentTarget));
@@ -12,18 +13,21 @@ const AddWorkoutPage = ({ user, onLogout }) => {
     setError("");
     setPending(true);
     try {
-      const response = await fetch("/api/workouts", {
+      const res = await fetch("/api/workouts", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
         body: JSON.stringify(workout),
       });
-      const data = await response.json();
-      if (response.status === 401) {
-        onLogout();
+      if (res.status === 401) {
+        onLogout(); // token expired or user deleted
         navigate("/login");
         return;
       }
-      if (!response.ok) throw new Error(data.error || "Could not add workout");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.message || "Could not add workout");
       navigate("/");
     } catch (err) {
       setError(err.message);
@@ -36,19 +40,19 @@ const AddWorkoutPage = ({ user, onLogout }) => {
     <div className="create">
       <h2>Add a New Workout</h2>
       <form onSubmit={submitForm}>
-        <label htmlFor="title">Title:</label>
-        <input id="title" name="title" type="text" required />
-        <label htmlFor="difficulty">Difficulty:</label>
-        <select id="difficulty" name="difficulty">
+        <label>Title:</label>
+        <input name="title" type="text" required />
+        <label>Difficulty:</label>
+        <select name="difficulty">
           <option value="Beginner">Beginner</option>
           <option value="Intermediate">Intermediate</option>
           <option value="Advanced">Advanced</option>
         </select>
-        <label htmlFor="description">Description:</label>
-        <textarea id="description" name="description" required></textarea>
-        <label htmlFor="price">Price:</label>
-        <input id="price" name="price" type="number" step="0.01" min="0" required />
-        {error && <p role="alert">{error}</p>}
+        <label>Description:</label>
+        <textarea name="description" required></textarea>
+        <label>Price:</label>
+        <input name="price" type="number" step="0.01" min="0" required />
+        {error && <p className="error">{error}</p>}
         <button disabled={pending}>{pending ? "Adding..." : "Add Workout"}</button>
       </form>
     </div>

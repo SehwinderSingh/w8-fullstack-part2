@@ -6,19 +6,26 @@ const config = require("../utils/config");
 const requireAuth = async (req, res, next) => {
   const authorization = req.get("Authorization");
   const match = authorization && authorization.match(/^Bearer\s+(\S+)$/i);
-  if (!match) return res.status(401).json({ error: "Authentication required" });
+  if (!match) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
 
-  let decodedToken;
+  let decoded;
   try {
-    decodedToken = jwt.verify(match[1], config.SECRET);
+    decoded = jwt.verify(match[1], config.SECRET); // throws if invalid or expired
   } catch {
     return res.status(401).json({ error: "Invalid or expired token" });
   }
-  if (!decodedToken || !mongoose.isValidObjectId(decodedToken.id)) {
+
+  if (!decoded || !mongoose.isValidObjectId(decoded.id)) {
     return res.status(401).json({ error: "Invalid token" });
   }
-  const user = await User.findById(decodedToken.id);
-  if (!user) return res.status(401).json({ error: "User no longer exists" });
+
+  const user = await User.findById(decoded.id);
+  if (!user) {
+    return res.status(401).json({ error: "User no longer exists" });
+  }
+
   req.user = user;
   next();
 };

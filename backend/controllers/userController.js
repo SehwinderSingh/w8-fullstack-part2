@@ -4,7 +4,7 @@ const { SECRET } = require("../utils/config");
 
 const generateToken = (_id) => {
   return jwt.sign(
-    { _id },
+    { id: _id },
     SECRET,
     { expiresIn: "3d" }
   );

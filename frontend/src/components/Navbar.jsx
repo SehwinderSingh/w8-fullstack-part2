@@ -7,13 +7,17 @@ const Navbar = ({ user, onLogout }) => {
       <div className="links">
         <Link to="/">Home</Link>
         {user && <Link to="/add-workout">Add Workout</Link>}
-        {user ? <>
-          <span>{user.username} ({user.role})</span>
-          <button type="button" onClick={onLogout}>Log Out</button>
-        </> : <>
-          <Link to="/login">Log In</Link>
-          <Link to="/signup">Sign Up</Link>
-        </>}
+        {user ? (
+          <>
+            <span>{user.username} ({user.role})</span>
+            <button type="button" onClick={onLogout}>Log Out</button>
+          </>
+        ) : (
+          <>
+            <Link to="/login">Log In</Link>
+            <Link to="/signup">Sign Up</Link>
+          </>
+        )}
       </div>
     </nav>
   );

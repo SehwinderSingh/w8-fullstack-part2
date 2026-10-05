@@ -7,42 +7,43 @@ const EditWorkoutPage = ({ user, onLogout }) => {
   const [workout, setWorkout] = useState(null);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+
   useEffect(() => {
-    const controller = new AbortController();
     const load = async () => {
-      setWorkout(null);
-      setError("");
       try {
-        const response = await fetch(`/api/workouts/${id}`, { signal: controller.signal });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Could not load workout");
+        const res = await fetch(`/api/workouts/${id}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Could not load workout");
         setWorkout(data);
       } catch (err) {
-        if (err.name !== "AbortError") setError(err.message);
+        setError(err.message);
       }
     };
     load();
-    return () => controller.abort();
   }, [id]);
-  const submitForm = async (event) => {
-    event.preventDefault();
-    const values = Object.fromEntries(new FormData(event.currentTarget));
+
+  const submitForm = async (e) => {
+    e.preventDefault();
+    const values = Object.fromEntries(new FormData(e.currentTarget));
     values.price = Number(values.price);
     setPending(true);
     setError("");
     try {
-      const response = await fetch(`/api/workouts/${id}`, {
+      const res = await fetch(`/api/workouts/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
         body: JSON.stringify(values),
       });
-      const data = await response.json();
-      if (response.status === 401) {
+      if (res.status === 401) {
         onLogout();
         navigate("/login");
         return;
       }
-      if (!response.ok) throw new Error(data.error || "Could not update workout");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.message || "Could not update workout");
       navigate(`/workouts/${id}`);
     } catch (err) {
       setError(err.message);
@@ -50,23 +51,27 @@ const EditWorkoutPage = ({ user, onLogout }) => {
       setPending(false);
     }
   };
-  if (!workout) return error ? <p role="alert">{error}</p> : <p>Loading workout...</p>;
+
+  if (!workout) return error ? <p className="error">{error}</p> : <p>Loading...</p>;
+
   return (
     <div className="create">
       <h2>Update Workout</h2>
-      <form onSubmit={submitForm} key={id}>
-        <label htmlFor="title">Title:</label>
-        <input id="title" name="title" defaultValue={workout.title} required />
-        <label htmlFor="difficulty">Difficulty:</label>
-        <select id="difficulty" name="difficulty" defaultValue={workout.difficulty}>
-          <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
+      <form onSubmit={submitForm}>
+        <label>Title:</label>
+        <input name="title" defaultValue={workout.title} required />
+        <label>Difficulty:</label>
+        <select name="difficulty" defaultValue={workout.difficulty}>
+          <option value="Beginner">Beginner</option>
+          <option value="Intermediate">Intermediate</option>
+          <option value="Advanced">Advanced</option>
         </select>
-        <label htmlFor="description">Description:</label>
-        <textarea id="description" name="description" defaultValue={workout.description} required />
-        <label htmlFor="price">Price:</label>
-        <input id="price" name="price" type="number" min="0" step="0.01" defaultValue={workout.price} required />
-        {error && <p role="alert">{error}</p>}
-        <button disabled={pending}>{pending ? "Saving..." : "Save Workout"}</button>
+        <label>Description:</label>
+        <textarea name="description" defaultValue={workout.description} required />
+        <label>Price:</label>
+        <input name="price" type="number" min="0" step="0.01" defaultValue={workout.price} required />
+        {error && <p className="error">{error}</p>}
+        <button disabled={pending}>{pending ? "Saving..." : "Update Workout"}</button>
       </form>
     </div>
   );

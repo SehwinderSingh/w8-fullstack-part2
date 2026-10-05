@@ -1,29 +1,23 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const requireAuth = require('../middleware/auth');
+const requireAuth = require("../middleware/auth");
 const {
   getAllWorkouts,
   createWorkout,
   getWorkoutById,
   updateWorkout,
   deleteWorkout,
-} = require('../controllers/workoutControllers');
+} = require("../controllers/workoutControllers");
 
-// GET /api/workouts
-router.get('/', getAllWorkouts);
+// Public
+router.get("/", getAllWorkouts);
+router.get("/:workoutId", getWorkoutById);
 
-// GET /api/workouts/:workoutId
-router.get('/:workoutId', getWorkoutById);
-
+// Everything below needs a valid token
 router.use(requireAuth);
 
-// POST /api/workouts
-router.post('/', createWorkout);
-
-// PUT /api/workouts/:workoutId
-router.put('/:workoutId', updateWorkout);
-
-// DELETE /api/workouts/:workoutId
-router.delete('/:workoutId', deleteWorkout);
+router.post("/", createWorkout);
+router.put("/:workoutId", updateWorkout);
+router.delete("/:workoutId", deleteWorkout);
 
 module.exports = router;
