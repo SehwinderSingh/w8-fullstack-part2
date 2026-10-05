@@ -17,9 +17,14 @@ const errorHandler = (error, req, res, next) => {
 };
 
 const requestLogger = (req, res, next) => {
+  const safeBody = { ...req.body };
+
+  if (safeBody.password) {
+    safeBody.password = "[REDACTED]";
+  }
   logger.info('Method:', req.method);
   logger.info('Path:  ', req.path);
-  logger.info('Body:  ', req.body);
+  logger.info('Body:  ', safeBody);
   logger.info('---');
   next();
 };

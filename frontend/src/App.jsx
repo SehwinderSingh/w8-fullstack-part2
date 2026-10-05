@@ -7,6 +7,8 @@ import WorkoutPage from "./pages/WorkoutPage";
 import EditWorkoutPage from "./pages/EditWorkoutPage";
 import Navbar from "./components/Navbar";
 import NotFoundPage from "./pages/NotFoundPage";
+import SignupPage from "./pages/SignupPage";
+import LoginPage from "./pages/LoginPage";  
 
 const App = () => {
   return (
@@ -19,7 +21,9 @@ const App = () => {
             <Route path="/add-workout" element={<AddWorkoutPage />} />
             <Route path="/workouts/:id" element={<WorkoutPage />} />
             <Route path="/edit-workout/:id" element={<EditWorkoutPage />} />
+            <Route path="/signup" element={<SignupPage />} />
             <Route path="*" element={<NotFoundPage />} />
+            <Route path="/login" element={<LoginPage />} />
           </Routes>
         </div>
       </BrowserRouter>
