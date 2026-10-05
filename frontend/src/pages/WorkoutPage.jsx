@@ -1,68 +1,73 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
-const WorkoutPage = () => {
+const WorkoutPage = ({ user, onLogout }) => {
   const { id } = useParams();
   const navigate = useNavigate();
-
   const [workout, setWorkout] = useState(null);
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    const fetchWorkout = async () => {
+    const controller = new AbortController();
+    const load = async () => {
+      setWorkout(null);
+      setError("");
       try {
-        const response = await fetch(`/api/workouts/${id}`);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch workout");
-        }
-
+        const response = await fetch(`/api/workouts/${id}`, { signal: controller.signal });
         const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not load workout");
         setWorkout(data);
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setIsLoading(false);
+      } catch (err) {
+        if (err.name !== "AbortError") setError(err.message);
       }
     };
-
-    fetchWorkout();
+    load();
+    return () => controller.abort();
   }, [id]);
 
-  const handleDelete = async () => {
+  const deleteWorkout = async () => {
+    if (!window.confirm("Delete this workout?")) return;
+    setDeleting(true);
+    setError("");
     try {
       const response = await fetch(`/api/workouts/${id}`, {
-        method: "DELETE",
+        method: "DELETE", headers: { Authorization: `Bearer ${user.token}` },
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete workout");
+      if (response.status === 401) {
+        onLogout();
+        navigate("/login");
+        return;
       }
-
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Could not delete workout");
+      }
       navigate("/");
-    } catch (error) {
-      setError(error.message);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
-  const handleEdit = async () => {
-    navigate(`/edit-workout/${workout._id}`)
-  }
-
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p className="error">{error}</p>;
-  if (!workout) return <p>Workout not found</p>;
-
+  if (!workout) return error ? <p role="alert">{error}</p> : <p>Loading workout...</p>;
   return (
     <div className="workout-preview">
+      <Link to="/">Back to workouts</Link>
       <h2>{workout.title}</h2>
       <p>Difficulty: {workout.difficulty}</p>
       <p>{workout.description}</p>
-      <p>Price: ${workout.price}</p>
-
-      <button onClick={handleDelete}>Delete</button>
-      <button onClick={handleEdit}>Edit</button>
+      <p>Price: ${workout.price.toFixed(2)}</p>
+      {error && <p role="alert">{error}</p>}
+      {user ? <div className="workout-actions">
+        <button type="button" onClick={() => navigate(`/edit-workout/${id}`)}>
+          Edit Workout
+        </button>
+        <button type="button" onClick={deleteWorkout} disabled={deleting}>
+          {deleting ? "Deleting..." : "Delete Workout"}
+        </button>
+      </div> : <Link to="/login">Log In</Link>}
     </div>
   );
 };

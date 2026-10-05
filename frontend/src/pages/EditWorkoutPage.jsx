@@ -1,44 +1,47 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-const EditWorkoutPage = () => {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const [workout, setWorkout] = useState(null)
-  const [error, setError] = useState("")
-  const [pending, setPending] = useState(false)
-
+const EditWorkoutPage = ({ user, onLogout }) => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [workout, setWorkout] = useState(null);
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
   useEffect(() => {
-    const controller = new AbortController()
+    const controller = new AbortController();
     const load = async () => {
-      setWorkout(null)
-      setError("")
+      setWorkout(null);
+      setError("");
       try {
-        const res = await fetch(`/api/workouts/${id}`, { signal: controller.signal })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error || "Could not load workout")
-        setWorkout(data)
+        const response = await fetch(`/api/workouts/${id}`, { signal: controller.signal });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not load workout");
+        setWorkout(data);
       } catch (err) {
-        if (err.name !== "AbortError") setError(err.message)
+        if (err.name !== "AbortError") setError(err.message);
       }
-    }
-    load()
-    return () => controller.abort
-  }, [id])
-
+    };
+    load();
+    return () => controller.abort();
+  }, [id]);
   const submitForm = async (event) => {
-    event.preventDefault()
-    const values = Object.fromEntries(new FormData(event.currentTarget))
+    event.preventDefault();
+    const values = Object.fromEntries(new FormData(event.currentTarget));
     values.price = Number(values.price);
     setPending(true);
     setError("");
     try {
       const response = await fetch(`/api/workouts/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.token}` },
         body: JSON.stringify(values),
       });
       const data = await response.json();
+      if (response.status === 401) {
+        onLogout();
+        navigate("/login");
+        return;
+      }
       if (!response.ok) throw new Error(data.error || "Could not update workout");
       navigate(`/workouts/${id}`);
     } catch (err) {
@@ -47,15 +50,13 @@ const EditWorkoutPage = () => {
       setPending(false);
     }
   };
-
-  if (!workout) return error ? <p role="alert">{error}</p> : <p>Loading workout...</p>
-
+  if (!workout) return error ? <p role="alert">{error}</p> : <p>Loading workout...</p>;
   return (
     <div className="create">
       <h2>Update Workout</h2>
       <form onSubmit={submitForm} key={id}>
         <label htmlFor="title">Title:</label>
-        <input id="title" name="title" defaultValue={workout.title} required/>
+        <input id="title" name="title" defaultValue={workout.title} required />
         <label htmlFor="difficulty">Difficulty:</label>
         <select id="difficulty" name="difficulty" defaultValue={workout.difficulty}>
           <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
@@ -72,4 +73,3 @@ const EditWorkoutPage = () => {
 };
 
 export default EditWorkoutPage;
-

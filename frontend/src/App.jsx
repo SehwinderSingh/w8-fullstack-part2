@@ -1,4 +1,7 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useState } from "react";
+import SignupPage from "./pages/SignupPage";
+import LoginPage from "./pages/LoginPage";
 
 // pages & components
 import Home from "./pages/HomePage";
@@ -7,23 +10,36 @@ import WorkoutPage from "./pages/WorkoutPage";
 import EditWorkoutPage from "./pages/EditWorkoutPage";
 import Navbar from "./components/Navbar";
 import NotFoundPage from "./pages/NotFoundPage";
-import SignupPage from "./pages/SignupPage";
-import LoginPage from "./pages/LoginPage";  
 
 const App = () => {
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("workoutUser")) || null;
+    } catch {
+      return null;
+    }
+  });
+  const loginUser = (value) => {
+    localStorage.setItem("workoutUser", JSON.stringify(value));
+    setUser(value);
+  };
+  const logoutUser = () => {
+    localStorage.removeItem("workoutUser");
+    setUser(null);
+  };
   return (
     <div className="App">
       <BrowserRouter>
-        <Navbar />
+        <Navbar user={user} onLogout={logoutUser} />
         <div className="content">
           <Routes>
+            <Route path="/signup" element={<SignupPage onLogin={loginUser} />} />
+            <Route path="/login" element={<LoginPage onLogin={loginUser} />} />
             <Route path="/" element={<Home />} />
-            <Route path="/add-workout" element={<AddWorkoutPage />} />
-            <Route path="/workouts/:id" element={<WorkoutPage />} />
-            <Route path="/edit-workout/:id" element={<EditWorkoutPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/add-workout" element={user ? <AddWorkoutPage user={user} onLogout={logoutUser} /> : <Navigate to="/login" replace />} />
+            <Route path="/workouts/:id" element={<WorkoutPage user={user} onLogout={logoutUser} />} />
+            <Route path="/edit-workout/:id" element={user ? <EditWorkoutPage user={user} onLogout={logoutUser} /> : <Navigate to="/login" replace />} />
             <Route path="*" element={<NotFoundPage />} />
-            <Route path="/login" element={<LoginPage />} />
           </Routes>
         </div>
       </BrowserRouter>

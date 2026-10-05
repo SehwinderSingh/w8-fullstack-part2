@@ -3,83 +3,48 @@ const mongoose = require('mongoose');
 
 // GET /api/workouts
 const getAllWorkouts = async (req, res) => {
-  try {
-    const workouts = await Workout.find({});
-    res.status(200).json(workouts);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  const workouts = await Workout.find({});
+  res.status(200).json(workouts);
 };
 
 // POST /api/workouts
 const createWorkout = async (req, res) => {
-  try {
-    const workout = await Workout.create({ ...req.body });
-    res.status(201).json(workout);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
+  const workout = await Workout.create(req.body);
+  res.status(201).json(workout);
 };
 
 // GET /api/workouts/:workoutId
 const getWorkoutById = async (req, res) => {
-  try {
-    const { workoutId } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(workoutId)) {
-      return res.status(400).json({ message: 'Invalid workout ID' });
-    }
-    
-    const workout = await Workout.findById(workoutId);
-
-    if (!workout) {
-      return res.status(404).json({ message: 'Workout not found' });
-    }
-
-    res.status(200).json(workout)
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (!mongoose.isValidObjectId(req.params.workoutId)) {
+    return res.status(400).json({ error: "Invalid workout ID" });
   }
-  res.send("getWorkoutById");
+  const workout = await Workout.findById(req.params.workoutId);
+  if (!workout) return res.status(404).json({ error: "Workout not found" });
+  res.status(200).json(workout);
 };
 
 // PUT /api/workouts/:workoutId
 const updateWorkout = async (req, res) => {
-  try {
-    const workout = await Workout.findOneAndUpdate(
-      { _id: req.params.workoutId },
-      { ...req.body },
-      { returnDocument: "after", runValidators: true }
-    );
-    if (!workout) {
-      res.status(404).json({ message: "Workout not found" })
-    }
-    res.status(200).json(workout)
-  } catch (error) {
-    res.status(400).json({ message: error.message })
+  if (!mongoose.isValidObjectId(req.params.workoutId)) {
+    return res.status(400).json({ error: "Invalid workout ID" });
   }
+  const workout = await Workout.findOneAndUpdate(
+    { _id: req.params.workoutId },
+    { ...req.body },
+    { returnDocument: "after", runValidators: true }
+  );
+  if (!workout) return res.status(404).json({ error: "Workout not found" });
+  res.status(200).json(workout);
 };
 
 // DELETE /api/workouts/:workoutId
 const deleteWorkout = async (req, res) => {
-  try {
-    const { workoutId } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(workoutId)) {
-      return res.status(400).json({ message: 'Invalid workout ID' });
-    }
-
-    const workout = await Workout.findByIdAndDelete(workoutId);
-
-    if (!workout) {
-      return res.status(404).json({ message: 'Workout not found' });
-    }
-
-    res.status(204).send();
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }   
-  res.send("deleteWorkout");
+  if (!mongoose.isValidObjectId(req.params.workoutId)) {
+    return res.status(400).json({ error: "Invalid workout ID" });
+  }
+  const workout = await Workout.findOneAndDelete({ _id: req.params.workoutId });
+  if (!workout) return res.status(404).json({ error: "Workout not found" });
+  res.status(204).end();
 };
 
 module.exports = {
@@ -89,4 +54,3 @@ module.exports = {
   updateWorkout,
   deleteWorkout,
 };
-
